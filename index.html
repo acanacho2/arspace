@@ -3,47 +3,42 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>ARSpace</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <title>ARSpace — Debug</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400&display=swap');
     *{box-sizing:border-box;margin:0;padding:0;}
-    :root{
-      --ink:#0a0a0f; --cream:#f5f0e8; --warm:#e8dcc8;
-      --accent:#c84b2f; --gold:#d4a853; --mid:#7a6f63;
-      --glass:rgba(10,10,15,0.65);
-    }
-    html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
+    :root{--ink:#0a0a0f;--cream:#f5f0e8;--warm:#e8dcc8;--accent:#c84b2f;--gold:#d4a853;--mid:#7a6f63;--glass:rgba(10,10,15,0.65);}
+    html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'DM Sans',sans-serif;}
 
-    /* ── SPLASH ── */
-    #splash{
-      position:fixed;inset:0;background:var(--ink);
-      overflow-y:auto;z-index:50;
-      padding:2rem 1.5rem 4rem;
-      display:flex;flex-direction:column;align-items:center;
-      transition:opacity .4s,transform .4s;
-    }
+    /* DEBUG SCREEN */
+    #dbg{position:fixed;inset:0;background:#0a0a0f;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:1rem;}
+    #dbg.off{display:none;}
+    .dbg-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:#f5f0e8;margin-bottom:.5rem;}
+    .dbg-list{width:100%;max-width:360px;display:flex;flex-direction:column;gap:.5rem;}
+    .dbg-row{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.05);border-radius:10px;padding:.7rem 1rem;}
+    .dbg-lbl{font-size:.82rem;color:#7a6f63;}
+    .dbg-val{font-size:.82rem;font-weight:700;color:#f5f0e8;}
+    .dbg-val.ok{color:#4ade80;}
+    .dbg-val.err{color:#f87171;}
+    .dbg-val.warn{color:#fbbf24;}
+    .dbg-btn{width:100%;max-width:360px;padding:1rem;background:#d4a853;color:#0a0a0f;border:none;border-radius:13px;font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;cursor:pointer;margin-top:.5rem;}
+    .dbg-note{font-size:.72rem;color:#7a6f63;text-align:center;max-width:300px;line-height:1.5;}
+
+    /* SPLASH */
+    #splash{position:fixed;inset:0;background:var(--ink);overflow-y:auto;z-index:50;padding:2rem 1.5rem 4rem;display:flex;flex-direction:column;align-items:center;transition:opacity .4s,transform .4s;}
     #splash.hide{opacity:0;transform:scale(1.03);pointer-events:none;}
-
     .logo{display:flex;align-items:center;gap:.6rem;align-self:flex-start;margin-bottom:2rem;}
     .logo-box{width:38px;height:38px;border:2px solid var(--gold);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;}
     .logo-txt{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--cream);}
     .logo-txt span{color:var(--gold);}
-
     h1{font-family:'Syne',sans-serif;font-size:clamp(1.7rem,6vw,2.6rem);font-weight:800;color:var(--cream);line-height:1.1;letter-spacing:-.03em;margin-bottom:.6rem;align-self:flex-start;}
     h1 em{font-style:normal;color:var(--gold);}
     .sub{font-size:.9rem;color:var(--mid);line-height:1.6;margin-bottom:1.8rem;align-self:flex-start;}
     .lbl{font-family:'Syne',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--mid);margin-bottom:.8rem;align-self:flex-start;}
-
-    /* QR GRID */
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;width:100%;max-width:400px;margin-bottom:2rem;}
-    .card{
-      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-      border-radius:14px;padding:1rem .8rem;
-      display:flex;flex-direction:column;align-items:center;gap:.6rem;
-      cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
-    }
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1rem .8rem;display:flex;flex-direction:column;align-items:center;gap:.6rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
     .card:active{background:rgba(212,168,83,.12);border-color:var(--gold);transform:scale(.97);}
     .qr-box{background:#fff;border-radius:7px;padding:5px;width:96px;height:96px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .qr-box canvas,.qr-box img{display:block!important;width:86px!important;height:86px!important;}
@@ -53,69 +48,26 @@
     .card-dims{font-size:.58rem;color:var(--mid);text-align:center;}
     .badge{font-size:.52rem;font-weight:700;background:rgba(212,168,83,.15);color:var(--gold);border-radius:4px;padding:2px 6px;letter-spacing:.08em;}
 
-    /* STEPS */
-    .steps{display:flex;gap:.6rem;width:100%;max-width:400px;}
-    .step{flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;}
-    .step-n{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;}
-    .step-t{font-size:.6rem;color:var(--mid);line-height:1.4;}
-
-    /* ── AR VIEW ── */
+    /* AR */
     #ar{position:fixed;inset:0;display:none;z-index:100;}
     #ar.on{display:block;}
-
-    /* Video fills screen */
-    #vid{
-      position:absolute;inset:0;
-      width:100%;height:100%;
-      object-fit:cover;
-      z-index:1;
-    }
-
-    /* Canvas sits ON TOP of video, transparent background */
-    #cv{
-      position:absolute;inset:0;
-      width:100%;height:100%;
-      z-index:2;
-      pointer-events:none;
-      display:block;
-    }
-
-    /* All HUD above canvas */
+    #vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
+    #cv{position:absolute;inset:0;z-index:2;pointer-events:none;display:block;}
     #hud{position:absolute;inset:0;z-index:3;pointer-events:none;}
-
-    /* Top bar */
-    #topbar{
-      position:absolute;top:0;left:0;right:0;
-      padding:max(env(safe-area-inset-top),14px) 14px 14px;
-      background:linear-gradient(to bottom,rgba(0,0,0,.8) 0%,transparent 100%);
-      display:flex;align-items:center;justify-content:space-between;
-      pointer-events:all;
-    }
+    #topbar{position:absolute;top:0;left:0;right:0;padding:max(env(safe-area-inset-top),14px) 14px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);display:flex;align-items:center;justify-content:space-between;pointer-events:all;}
     .hbtn{width:42px;height:42px;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:var(--glass);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);}
     .pill{background:var(--glass);border:1px solid rgba(255,255,255,.15);border-radius:22px;padding:5px 13px 5px 9px;display:flex;align-items:center;gap:7px;backdrop-filter:blur(10px);}
     .dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:blink 2s infinite;}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
     .pill-nm{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:600;color:#fff;}
-
-    /* Reticle */
     #ret{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;transition:opacity .3s;}
     #ret.off{opacity:0;}
     .ro{width:68px;height:68px;border:2px solid rgba(255,255,255,.8);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:rp 2s ease-in-out infinite;}
     .ri{width:9px;height:9px;background:#fff;border-radius:50%;}
     @keyframes rp{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.1);opacity:1}}
-
-    /* Hint */
     #hint{position:absolute;top:calc(50% + 56px);left:50%;transform:translateX(-50%);background:var(--glass);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:8px 18px;font-size:.78rem;color:rgba(255,255,255,.9);backdrop-filter:blur(10px);white-space:nowrap;transition:opacity .3s;pointer-events:none;}
     #hint.off{opacity:0;}
-
-    /* Bottom controls */
-    #ctrl{
-      position:absolute;bottom:0;left:0;right:0;
-      padding:14px 14px max(env(safe-area-inset-bottom),18px);
-      background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 100%);
-      display:flex;flex-direction:column;align-items:center;gap:10px;
-      pointer-events:all;
-    }
+    #ctrl{position:absolute;bottom:0;left:0;right:0;padding:14px 14px max(env(safe-area-inset-bottom),18px);background:linear-gradient(to top,rgba(0,0,0,.85),transparent);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:all;}
     .srow{display:flex;align-items:center;gap:9px;width:100%;max-width:330px;}
     .slbl{font-family:'Syne',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);min-width:34px;}
     input[type=range]{flex:1;-webkit-appearance:none;height:3px;border-radius:3px;background:rgba(255,255,255,.25);outline:none;}
@@ -125,8 +77,6 @@
     .abtn-main{min-width:155px;background:#fff;color:var(--ink);padding:0 1.3rem;box-shadow:0 4px 18px rgba(0,0,0,.35);}
     .abtn-main:active{transform:scale(.95);}
     .abtn-sm{width:50px;background:var(--glass);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:1rem;backdrop-filter:blur(8px);}
-
-    /* Info panel */
     #panel{position:absolute;bottom:0;left:0;right:0;background:rgba(245,240,232,.97);border-radius:22px 22px 0 0;padding:1.3rem 1.3rem max(env(safe-area-inset-bottom),18px);transform:translateY(100%);transition:transform .38s cubic-bezier(.34,1.56,.64,1);pointer-events:all;}
     #panel.on{transform:translateY(0);}
     .hdl{width:38px;height:4px;border-radius:2px;background:rgba(0,0,0,.12);margin:0 auto 1rem;}
@@ -140,12 +90,8 @@
     .pb1{background:var(--ink);color:#fff;}
     .pb2{background:var(--warm);color:var(--ink);}
     #xpanel{position:absolute;top:.9rem;right:.9rem;width:28px;height:28px;border-radius:50%;background:var(--warm);border:none;cursor:pointer;font-size:.85rem;}
-
-    /* Toast */
-    #toast{position:fixed;bottom:160px;left:50%;transform:translateX(-50%) translateY(14px);background:rgba(10,10,15,.93);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:8px 18px;color:#fff;font-size:.78rem;backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:all .28s;z-index:999;white-space:nowrap;}
+    #toast{position:fixed;bottom:160px;left:50%;transform:translateX(-50%) translateY(14px);background:rgba(10,10,15,.93);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:8px 18px;color:#fff;font-size:.78rem;backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:all .28s;z-index:9999;white-space:nowrap;}
     #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
-
-    /* Loading */
     #load{position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;z-index:200;transition:opacity .4s;}
     #load.off{opacity:0;pointer-events:none;}
     .sp{width:42px;height:42px;border:3px solid rgba(212,168,83,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
@@ -155,22 +101,27 @@
 </head>
 <body>
 
-<div id="load"><div class="sp"></div><div class="sp-t">Cargando ARSpace…</div></div>
+<!-- DEBUG SCREEN -->
+<div id="dbg">
+  <div class="dbg-title">🔍 Diagnóstico del dispositivo</div>
+  <div class="dbg-list" id="dbg-list"></div>
+  <button class="dbg-btn" id="dbg-btn" onclick="proceedToApp()">Continuar a la app →</button>
+  <p class="dbg-note" id="dbg-note">Verificando compatibilidad…</p>
+</div>
+
+<div id="load"><div class="sp"></div><div class="sp-t">Cargando…</div></div>
 
 <div id="splash">
-  <div class="logo">
-    <div class="logo-box">🪑</div>
-    <div class="logo-txt">AR<span>Space</span></div>
-  </div>
+  <div class="logo"><div class="logo-box">🪑</div><div class="logo-txt">AR<span>Space</span></div></div>
   <h1>Decorá tu espacio<br/>en <em>tiempo real</em></h1>
-  <p class="sub">Escaneá el QR con tu celular o tocá la tarjeta para ver el mueble en realidad aumentada, en tamaño real.</p>
+  <p class="sub">Escaneá el QR o tocá la tarjeta para ver el mueble en realidad aumentada.</p>
   <p class="lbl">▸ Escaneá o tocá un producto</p>
   <div class="grid" id="grid"></div>
   <p class="lbl">▸ ¿Cómo funciona?</p>
-  <div class="steps">
-    <div class="step"><div class="step-n">1</div><div class="step-t">Escaneá el QR del producto</div></div>
-    <div class="step"><div class="step-n">2</div><div class="step-t">El mueble aparece en tu espacio</div></div>
-    <div class="step"><div class="step-n">3</div><div class="step-t">Movelo y ajustá el tamaño</div></div>
+  <div style="display:flex;gap:.6rem;width:100%;max-width:400px;">
+    <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;"><div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;">1</div><div style="font-size:.6rem;color:var(--mid);line-height:1.4;">Escaneá el QR</div></div>
+    <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;"><div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;">2</div><div style="font-size:.6rem;color:var(--mid);line-height:1.4;">El mueble aparece en tu espacio</div></div>
+    <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;"><div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;">3</div><div style="font-size:.6rem;color:var(--mid);line-height:1.4;">Movelo y ajustá el tamaño</div></div>
   </div>
 </div>
 
@@ -202,11 +153,7 @@
       <div class="hdl"></div>
       <div class="prow">
         <div class="pico" id="pico">🛋️</div>
-        <div>
-          <div class="pname" id="pnm">…</div>
-          <div class="pdims" id="pdims">…</div>
-          <div class="pprice" id="ppr">…</div>
-        </div>
+        <div><div class="pname" id="pnm">…</div><div class="pdims" id="pdims">…</div><div class="pprice" id="ppr">…</div></div>
       </div>
       <div class="pbtns">
         <button class="pb pb2" onclick="closePanel()">Seguir viendo</button>
@@ -215,43 +162,132 @@
     </div>
   </div>
 </div>
-
 <div id="toast"></div>
 
 <script>
+// ─── DIAGNOSIS ───
+async function runDiagnostics() {
+  const results = [];
+
+  // 1. Three.js loaded?
+  results.push({
+    label: 'Three.js (3D)',
+    ok: typeof THREE !== 'undefined',
+    val: typeof THREE !== 'undefined' ? 'Cargado ✓' : 'ERROR ✗'
+  });
+
+  // 2. WebGL support
+  let webgl = false, webglVer = 'No';
+  try {
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl');
+    if (gl) { webgl = true; webglVer = gl instanceof WebGL2RenderingContext ? 'WebGL 2' : 'WebGL 1'; }
+  } catch(e) {}
+  results.push({ label: 'WebGL (gráficos)', ok: webgl, val: webgl ? webglVer+' ✓' : 'No soportado ✗' });
+
+  // 3. Camera API
+  const hasCam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  results.push({ label: 'API de Cámara', ok: hasCam, val: hasCam ? 'Disponible ✓' : 'No disponible ✗' });
+
+  // 4. Try to actually get camera
+  let camOk = false, camMsg = '';
+  if (hasCam) {
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      s.getTracks().forEach(t => t.stop());
+      camOk = true; camMsg = 'Permiso OK ✓';
+    } catch(e) {
+      camMsg = e.name === 'NotAllowedError' ? 'Permiso denegado ✗' : 'Error: ' + e.name + ' ✗';
+    }
+  } else {
+    camMsg = 'No disponible ✗';
+  }
+  results.push({ label: 'Permiso cámara', ok: camOk, val: camMsg });
+
+  // 5. Browser
+  const ua = navigator.userAgent;
+  const isChrome = /Chrome\//.test(ua) && !/Edg\//.test(ua);
+  const isSamsung = /SamsungBrowser/.test(ua);
+  const isFirefox = /Firefox\//.test(ua);
+  const browserName = isChrome ? 'Chrome' : isSamsung ? 'Samsung' : isFirefox ? 'Firefox' : 'Otro';
+  results.push({ label: 'Navegador', ok: isChrome || isSamsung, val: browserName });
+
+  // 6. Try WebGL renderer
+  let rendererOk = false;
+  try {
+    const c2 = document.createElement('canvas');
+    c2.width = 100; c2.height = 100;
+    const r = new THREE.WebGLRenderer({ canvas: c2, alpha: true });
+    r.render(new THREE.Scene(), new THREE.PerspectiveCamera());
+    r.dispose();
+    rendererOk = true;
+  } catch(e) {}
+  results.push({ label: 'Renderizado 3D', ok: rendererOk, val: rendererOk ? 'Funciona ✓' : 'Falla ✗' });
+
+  // Render results
+  const list = document.getElementById('dbg-list');
+  list.innerHTML = '';
+  let allOk = true;
+  results.forEach(r => {
+    if (!r.ok) allOk = false;
+    const row = document.createElement('div');
+    row.className = 'dbg-row';
+    row.innerHTML = `<span class="dbg-lbl">${r.label}</span><span class="dbg-val ${r.ok?'ok':'err'}">${r.val}</span>`;
+    list.appendChild(row);
+  });
+
+  const note = document.getElementById('dbg-note');
+  const btn = document.getElementById('dbg-btn');
+  if (allOk) {
+    note.textContent = '✅ Todo OK — la app debería funcionar.';
+    btn.textContent = 'Abrir ARSpace →';
+  } else if (!webgl || !rendererOk) {
+    note.textContent = '⚠️ Tu navegador bloquea WebGL. Probá activarlo en Configuración → Chrome → Flags → WebGL.';
+    btn.textContent = 'Intentar igual →';
+  } else if (!camOk) {
+    note.textContent = '⚠️ No hay permiso de cámara. Tocá "Continuar" y aceptá el permiso cuando aparezca.';
+    btn.textContent = 'Intentar igual →';
+  } else {
+    note.textContent = '⚠️ Hay un problema. Intentá con Chrome actualizado.';
+    btn.textContent = 'Intentar igual →';
+  }
+}
+
+function proceedToApp() {
+  document.getElementById('dbg').classList.add('off');
+  buildCards();
+  document.getElementById('load').classList.remove('off');
+  setTimeout(() => {
+    document.getElementById('load').classList.add('off');
+    const pid = new URLSearchParams(window.location.search).get('product');
+    if (pid && P[pid]) setTimeout(() => launchAR(pid), 300);
+  }, 600);
+}
+
 // ─── CATALOG ───
 const P = {
-  sofa:     {name:'Sofá Milano',    emoji:'🛋️', price:'$85.000',  dims:'220×90×80 cm · Gris perla', sz:[2.2,0.8,0.9],  col:0x8a8a8a, leg:0x5d4037, build:mkSofa},
-  armchair: {name:'Sillón Oslo',    emoji:'🪑', price:'$32.000',  dims:'85×75×95 cm · Mostaza',     sz:[0.85,0.95,0.75],col:0xcb9a2a, leg:0x4e342e, build:mkChair},
-  table:    {name:'Mesa Nórdica',   emoji:'🪵', price:'$48.000',  dims:'160×80×75 cm · Roble',      sz:[1.6,0.75,0.8],  col:0xb5813a, leg:0x6d4c28, build:mkTable},
-  bed:      {name:'Cama Boa Queen', emoji:'🛏️', price:'$120.000', dims:'200×160×50 cm · Blanco',    sz:[2.0,0.5,1.6],   col:0xf0ede6, leg:0xd4c5a9, build:mkBed},
+  sofa:     {name:'Sofá Milano',    emoji:'🛋️', price:'$85.000',  dims:'220×90×80 cm · Gris perla', sz:[2.2,0.8,0.9],   col:0x8a8a8a, leg:0x5d4037, build:mkSofa},
+  armchair: {name:'Sillón Oslo',    emoji:'🪑', price:'$32.000',  dims:'85×75×95 cm · Mostaza',     sz:[0.85,0.95,0.75], col:0xcb9a2a, leg:0x4e342e, build:mkChair},
+  table:    {name:'Mesa Nórdica',   emoji:'🪵', price:'$48.000',  dims:'160×80×75 cm · Roble',      sz:[1.6,0.75,0.8],   col:0xb5813a, leg:0x6d4c28, build:mkTable},
+  bed:      {name:'Cama Boa Queen', emoji:'🛏️', price:'$120.000', dims:'200×160×50 cm · Blanco',    sz:[2.0,0.5,1.6],    col:0xf0ede6, leg:0xd4c5a9, build:mkBed},
 };
 
-// ─── BUILD QR CARDS ───
 function buildCards() {
   const g = document.getElementById('grid');
+  if (g.children.length > 0) return;
   const base = window.location.href.split('?')[0];
   Object.entries(P).forEach(([id,p]) => {
     const c = document.createElement('div');
     c.className = 'card';
     c.onclick = () => launchAR(id);
-
     const sl = document.createElement('div'); sl.className = 'scan-line'; c.appendChild(sl);
-
     const qb = document.createElement('div'); qb.className = 'qr-box'; qb.id = 'q'+id; c.appendChild(qb);
-
-    c.innerHTML += `<div class="card-name">${p.emoji} ${p.name}</div>
-    <div class="card-dims">${p.dims.split('·')[0].trim()}</div>
-    <div class="badge">AR READY</div>`;
-
-    // re-insert qr-box before innerHTML content
+    c.innerHTML += `<div class="card-name">${p.emoji} ${p.name}</div><div class="card-dims">${p.dims.split('·')[0].trim()}</div><div class="badge">AR READY</div>`;
     c.insertBefore(qb, c.children[1]);
     g.appendChild(c);
-
     try {
       new QRCode(document.getElementById('q'+id), {
-        text: base + '?product=' + id,
-        width: 86, height: 86,
+        text: base+'?product='+id, width:86, height:86,
         colorDark:'#000000', colorLight:'#ffffff',
         correctLevel: QRCode.CorrectLevel.M
       });
@@ -264,7 +300,6 @@ let renderer, scene, camera, model, animId;
 let rotY=0, scaleV=1, placed=false;
 let drag=false, lastT=null, pinch=null;
 
-// ─── LAUNCH AR ───
 async function launchAR(id) {
   const p = P[id];
   document.getElementById('hud-nm').textContent = p.name;
@@ -272,36 +307,26 @@ async function launchAR(id) {
   document.getElementById('pnm').textContent = p.name;
   document.getElementById('pdims').textContent = p.dims;
   document.getElementById('ppr').textContent = p.price;
-
-  // Show AR div first
   document.getElementById('ar').classList.add('on');
   document.getElementById('splash').classList.add('hide');
-
-  // Reset UI
-  placed = false; rotY = 0; scaleV = 1;
-  document.getElementById('sl').value = 1;
-  document.getElementById('slv').textContent = '100%';
-  document.getElementById('pbtn').textContent = '📍 Colocar aquí';
+  placed=false; rotY=0; scaleV=1;
+  document.getElementById('sl').value=1;
+  document.getElementById('slv').textContent='100%';
+  document.getElementById('pbtn').textContent='📍 Colocar aquí';
   document.getElementById('ret').classList.remove('off');
   document.getElementById('hint').classList.remove('off');
   closePanel();
 
-  // Start camera
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: {ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }
-    });
+    const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
     document.getElementById('vid').srcObject = stream;
   } catch(e) {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({video:true});
       document.getElementById('vid').srcObject = stream;
-    } catch(e2) {
-      toast('⚠️ Sin acceso a cámara');
-    }
+    } catch(e2) { toast('⚠️ Sin acceso a cámara'); }
   }
 
-  // Init 3D
   initThree(p);
 }
 
@@ -314,61 +339,41 @@ function exitAR() {
   closePanel();
 }
 
-// ─── THREE.JS ─── 
 function initThree(prod) {
   if (animId) { cancelAnimationFrame(animId); animId=null; }
   if (renderer) { renderer.dispose(); renderer=null; }
-
   const cv = document.getElementById('cv');
   const W = window.innerWidth, H = window.innerHeight;
+  cv.width=W; cv.height=H;
+  cv.style.width=W+'px'; cv.style.height=H+'px';
 
-  // Force canvas size
-  cv.width = W;
-  cv.height = H;
-  cv.style.width = W+'px';
-  cv.style.height = H+'px';
+  try {
+    renderer = new THREE.WebGLRenderer({canvas:cv, alpha:true, antialias:true, premultipliedAlpha:false});
+  } catch(e) {
+    // fallback: no antialias
+    renderer = new THREE.WebGLRenderer({canvas:cv, alpha:true, premultipliedAlpha:false});
+  }
+  renderer.setSize(W,H,false);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setClearColor(0x000000,0);
+  renderer.shadowMap.enabled=true;
 
-  renderer = new THREE.WebGLRenderer({
-    canvas: cv,
-    alpha: true,           // transparent background → video shows through
-    antialias: true,
-    premultipliedAlpha: false
-  });
-  renderer.setSize(W, H, false);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 0);  // fully transparent clear
-  renderer.shadowMap.enabled = true;
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(60,W/H,0.01,100);
+  camera.position.set(0,1.6,0);
 
-  scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0xffffff,1.2));
+  const sun=new THREE.DirectionalLight(0xffffff,1.8);
+  sun.position.set(4,8,4); sun.castShadow=true; sun.shadow.mapSize.set(512,512); scene.add(sun);
+  const fill=new THREE.DirectionalLight(0xaabbff,0.5); fill.position.set(-4,3,-3); scene.add(fill);
 
-  camera = new THREE.PerspectiveCamera(60, W/H, 0.01, 100);
-  camera.position.set(0, 1.6, 0);  // eye height
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.ShadowMaterial({opacity:.25}));
+  floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
 
-  // Lighting
-  scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.5);
-  sun.position.set(4, 8, 4);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(1024,1024);
-  scene.add(sun);
-  const fill = new THREE.DirectionalLight(0xaabbff, 0.4);
-  fill.position.set(-4, 3, -3);
-  scene.add(fill);
-
-  // Shadow-receiving floor (invisible)
-  const floorM = new THREE.ShadowMaterial({opacity:0.25});
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(40,40), floorM);
-  floor.rotation.x = -Math.PI/2;
-  floor.position.y = 0;
-  floor.receiveShadow = true;
-  scene.add(floor);
-
-  // Build model
-  if (model) scene.remove(model);
-  model = new THREE.Group();
-  prod.build(model, prod);
-  // Place 1.5m in front of camera, on the floor
-  model.position.set(0, 0, -1.5);
+  if(model) scene.remove(model);
+  model=new THREE.Group();
+  prod.build(model,prod);
+  model.position.set(0,0,-1.5);
   scene.add(model);
 
   setupTouch();
@@ -376,147 +381,84 @@ function initThree(prod) {
 }
 
 function loop() {
-  animId = requestAnimationFrame(loop);
-  if (!model) return;
-  // Gentle float when not placed
-  if (!placed) {
-    model.position.y = Math.sin(Date.now()*0.002)*0.05;
-  }
-  model.rotation.y = rotY;
+  animId=requestAnimationFrame(loop);
+  if(!model) return;
+  if(!placed) model.position.y=Math.sin(Date.now()*.002)*.05;
+  model.rotation.y=rotY;
   model.scale.setScalar(scaleV);
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 
-// ─── BUILDERS ───
-function s(m){m.castShadow=m.receiveShadow=true;}
+function sh(m){m.castShadow=m.receiveShadow=true;}
 
 function mkSofa(g,p){
-  const [W,H,D]=p.sz;
-  const bm=new THREE.MeshLambertMaterial({color:p.col});
-  const lm=new THREE.MeshLambertMaterial({color:p.leg});
-  const cm=new THREE.MeshLambertMaterial({color:0xb8b8b8});
+  const [W,H,D]=p.sz,bm=new THREE.MeshLambertMaterial({color:p.col}),lm=new THREE.MeshLambertMaterial({color:p.leg}),cm=new THREE.MeshLambertMaterial({color:0xb8b8b8});
   let x;
-  // seat
-  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.36,D),bm); x.position.y=H*.18; s(x); g.add(x);
-  // back
-  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.56,D*.16),bm); x.position.set(0,H*.56,-D/2+D*.08); s(x); g.add(x);
-  // arms
-  for(const sx of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.075,H*.44,D),bm); x.position.set(sx*(W/2-W*.037),H*.38,0); s(x); g.add(x);}
-  // cushions
-  for(let i=0;i<3;i++){x=new THREE.Mesh(new THREE.BoxGeometry(W/3*.86,H*.13,D*.72),cm); x.position.set(-W/3+i*W/3,H*.44,D*.05); s(x); g.add(x);}
-  // legs
-  for(const sx of[-1,1]) for(const sz of[-1,1]){x=new THREE.Mesh(new THREE.CylinderGeometry(.03,.025,H*.14,8),lm); x.position.set(sx*(W/2-.1),H*.07,sz*(D/2-.1)); s(x); g.add(x);}
+  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.36,D),bm);x.position.y=H*.18;sh(x);g.add(x);
+  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.56,D*.16),bm);x.position.set(0,H*.56,-D/2+D*.08);sh(x);g.add(x);
+  for(const sx of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.075,H*.44,D),bm);x.position.set(sx*(W/2-W*.037),H*.38,0);sh(x);g.add(x);}
+  for(let i=0;i<3;i++){x=new THREE.Mesh(new THREE.BoxGeometry(W/3*.86,H*.13,D*.72),cm);x.position.set(-W/3+i*W/3,H*.44,D*.05);sh(x);g.add(x);}
+  for(const sx of[-1,1])for(const sz of[-1,1]){x=new THREE.Mesh(new THREE.CylinderGeometry(.03,.025,H*.14,8),lm);x.position.set(sx*(W/2-.1),H*.07,sz*(D/2-.1));sh(x);g.add(x);}
 }
-
 function mkChair(g,p){
-  const [W,H,D]=p.sz;
-  const bm=new THREE.MeshLambertMaterial({color:p.col});
-  const lm=new THREE.MeshLambertMaterial({color:p.leg});
+  const [W,H,D]=p.sz,bm=new THREE.MeshLambertMaterial({color:p.col}),lm=new THREE.MeshLambertMaterial({color:p.leg});
   let x;
-  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.3,D),bm); x.position.y=H*.25; s(x); g.add(x);
-  x=new THREE.Mesh(new THREE.BoxGeometry(W*.82,H*.48,D*.18),bm); x.position.set(0,H*.64,-D/2+.09); s(x); g.add(x);
-  for(const sx of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.1,H*.34,D),bm); x.position.set(sx*(W/2-.05),H*.44,0); s(x); g.add(x);}
-  x=new THREE.Mesh(new THREE.BoxGeometry(W*.73,H*.13,D*.78),new THREE.MeshLambertMaterial({color:0xd4a040})); x.position.set(0,H*.43,0); s(x); g.add(x);
-  for(const sx of[-1,1]) for(const sz of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(.04,H*.2,.04),lm); x.position.set(sx*(W/2-.07),H*.1,sz*(D/2-.07)); s(x); g.add(x);}
+  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.3,D),bm);x.position.y=H*.25;sh(x);g.add(x);
+  x=new THREE.Mesh(new THREE.BoxGeometry(W*.82,H*.48,D*.18),bm);x.position.set(0,H*.64,-D/2+.09);sh(x);g.add(x);
+  for(const sx of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.1,H*.34,D),bm);x.position.set(sx*(W/2-.05),H*.44,0);sh(x);g.add(x);}
+  x=new THREE.Mesh(new THREE.BoxGeometry(W*.73,H*.13,D*.78),new THREE.MeshLambertMaterial({color:0xd4a040}));x.position.set(0,H*.43,0);sh(x);g.add(x);
+  for(const sx of[-1,1])for(const sz of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(.04,H*.2,.04),lm);x.position.set(sx*(W/2-.07),H*.1,sz*(D/2-.07));sh(x);g.add(x);}
 }
-
 function mkTable(g,p){
-  const [W,H,D]=p.sz;
-  const bm=new THREE.MeshLambertMaterial({color:p.col});
-  const lm=new THREE.MeshLambertMaterial({color:p.leg});
+  const [W,H,D]=p.sz,bm=new THREE.MeshLambertMaterial({color:p.col}),lm=new THREE.MeshLambertMaterial({color:p.leg});
   let x;
-  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.07,D),bm); x.position.y=H; s(x); g.add(x);
-  for(const sx of[-1,1]) for(const sz of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(.065,H*.95,.065),lm); x.position.set(sx*(W/2-.09),H*.475,sz*(D/2-.09)); s(x); g.add(x);}
-  x=new THREE.Mesh(new THREE.BoxGeometry(W*.72,.04,.04),lm); x.position.set(0,H*.32,0); s(x); g.add(x);
+  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.07,D),bm);x.position.y=H;sh(x);g.add(x);
+  for(const sx of[-1,1])for(const sz of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(.065,H*.95,.065),lm);x.position.set(sx*(W/2-.09),H*.475,sz*(D/2-.09));sh(x);g.add(x);}
+  x=new THREE.Mesh(new THREE.BoxGeometry(W*.72,.04,.04),lm);x.position.set(0,H*.32,0);sh(x);g.add(x);
 }
-
 function mkBed(g,p){
-  const [W,H,D]=p.sz;
-  const bm=new THREE.MeshLambertMaterial({color:p.col});
-  const fm=new THREE.MeshLambertMaterial({color:p.leg});
-  const wm=new THREE.MeshLambertMaterial({color:0xffffff});
+  const [W,H,D]=p.sz,bm=new THREE.MeshLambertMaterial({color:p.col}),fm=new THREE.MeshLambertMaterial({color:p.leg}),wm=new THREE.MeshLambertMaterial({color:0xffffff});
   let x;
-  x=new THREE.Mesh(new THREE.BoxGeometry(W*1.03,H,D*1.03),fm); x.position.y=H/2; s(x); g.add(x);
-  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.34,D*.83),wm); x.position.set(0,H+H*.17,-D*.04); s(x); g.add(x);
-  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*1.35,D*.09),bm); x.position.set(0,H*.68,-D/2-.04); s(x); g.add(x);
-  for(const px of[-.28,.28]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.24,H*.11,D*.16),new THREE.MeshLambertMaterial({color:0xeeeedd})); x.position.set(px*W,H+H*.36,-D*.28); s(x); g.add(x);}
+  x=new THREE.Mesh(new THREE.BoxGeometry(W*1.03,H,D*1.03),fm);x.position.y=H/2;sh(x);g.add(x);
+  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.34,D*.83),wm);x.position.set(0,H+H*.17,-D*.04);sh(x);g.add(x);
+  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*1.35,D*.09),bm);x.position.set(0,H*.68,-D/2-.04);sh(x);g.add(x);
+  for(const px of[-.28,.28]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.24,H*.11,D*.16),new THREE.MeshLambertMaterial({color:0xeeeedd}));x.position.set(px*W,H+H*.36,-D*.28);sh(x);g.add(x);}
 }
 
-// ─── CONTROLS ───
 function placeToggle(){
-  if(!placed){
-    placed=true;
-    model.position.y=0;
-    document.getElementById('ret').classList.add('off');
-    document.getElementById('hint').classList.add('off');
-    document.getElementById('pbtn').textContent='↺ Mover / Resetear';
-    setTimeout(()=>document.getElementById('panel').classList.add('on'),600);
-    toast('📐 ¡Colocado! Arrastrá para mover');
-  } else {
-    placed=false;
-    model.position.set(0,0,-1.5);
-    document.getElementById('ret').classList.remove('off');
-    document.getElementById('hint').classList.remove('off');
-    document.getElementById('pbtn').textContent='📍 Colocar aquí';
-    closePanel();
-  }
+  if(!placed){placed=true;model.position.y=0;document.getElementById('ret').classList.add('off');document.getElementById('hint').classList.add('off');document.getElementById('pbtn').textContent='↺ Mover / Resetear';setTimeout(()=>document.getElementById('panel').classList.add('on'),600);toast('📐 ¡Colocado! Arrastrá para mover');}
+  else{placed=false;model.position.set(0,0,-1.5);document.getElementById('ret').classList.remove('off');document.getElementById('hint').classList.remove('off');document.getElementById('pbtn').textContent='📍 Colocar aquí';closePanel();}
 }
 function rot(d){rotY+=d*Math.PI/8;}
-function onScale(v){scaleV=parseFloat(v); document.getElementById('slv').textContent=Math.round(scaleV*100)+'%';}
+function onScale(v){scaleV=parseFloat(v);document.getElementById('slv').textContent=Math.round(scaleV*100)+'%';}
 function closePanel(){document.getElementById('panel').classList.remove('on');}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2800);}
 
-// ─── TOUCH (move + pinch) ───
 function setupTouch(){
-  // Use the hud div for touches (on top of canvas)
-  const el = document.getElementById('hud');
-
+  const el=document.getElementById('hud');
   el.addEventListener('touchstart',e=>{
-    if(e.target.closest('#ctrl')||e.target.closest('#topbar')||e.target.closest('#panel')) return;
-    if(e.touches.length===1){drag=true; lastT={x:e.touches[0].clientX,y:e.touches[0].clientY};}
-    if(e.touches.length===2) pinch=pd(e.touches);
+    if(e.target.closest('#ctrl')||e.target.closest('#topbar')||e.target.closest('#panel'))return;
+    if(e.touches.length===1){drag=true;lastT={x:e.touches[0].clientX,y:e.touches[0].clientY};}
+    if(e.touches.length===2)pinch=pd(e.touches);
   },{passive:true});
-
   el.addEventListener('touchmove',e=>{
-    if(e.target.closest('#ctrl')||e.target.closest('#topbar')||e.target.closest('#panel')) return;
-    if(e.touches.length===1&&drag&&lastT&&model){
-      const dx=e.touches[0].clientX-lastT.x, dy=e.touches[0].clientY-lastT.y;
-      lastT={x:e.touches[0].clientX,y:e.touches[0].clientY};
-      model.position.x+=dx*.006;
-      model.position.z+=dy*.006;
-    }
-    if(e.touches.length===2&&pinch){
-      const d=pd(e.touches), r=d/pinch;
-      scaleV=Math.max(.3,Math.min(2.5,scaleV*r));
-      pinch=d;
-      document.getElementById('sl').value=scaleV;
-      document.getElementById('slv').textContent=Math.round(scaleV*100)+'%';
-    }
+    if(e.target.closest('#ctrl')||e.target.closest('#topbar')||e.target.closest('#panel'))return;
+    if(e.touches.length===1&&drag&&lastT&&model){const dx=e.touches[0].clientX-lastT.x,dy=e.touches[0].clientY-lastT.y;lastT={x:e.touches[0].clientX,y:e.touches[0].clientY};model.position.x+=dx*.006;model.position.z+=dy*.006;}
+    if(e.touches.length===2&&pinch){const d=pd(e.touches),r=d/pinch;scaleV=Math.max(.3,Math.min(2.5,scaleV*r));pinch=d;document.getElementById('sl').value=scaleV;document.getElementById('slv').textContent=Math.round(scaleV*100)+'%';}
   },{passive:true});
-
   el.addEventListener('touchend',()=>{drag=false;pinch=null;},{passive:true});
 }
-
 function pd(ts){const dx=ts[0].clientX-ts[1].clientX,dy=ts[0].clientY-ts[1].clientY;return Math.sqrt(dx*dx+dy*dy);}
 
 window.addEventListener('resize',()=>{
-  if(!renderer||!camera) return;
+  if(!renderer||!camera)return;
   const W=window.innerWidth,H=window.innerHeight;
-  const cv=document.getElementById('cv');
-  cv.width=W; cv.height=H;
-  cv.style.width=W+'px'; cv.style.height=H+'px';
-  camera.aspect=W/H; camera.updateProjectionMatrix();
-  renderer.setSize(W,H,false);
+  const cv=document.getElementById('cv');cv.width=W;cv.height=H;cv.style.width=W+'px';cv.style.height=H+'px';
+  camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H,false);
 });
 
-// ─── INIT ───
 window.addEventListener('load',()=>{
-  buildCards();
-  setTimeout(()=>{
-    document.getElementById('load').classList.add('off');
-    const pid=new URLSearchParams(window.location.search).get('product');
-    if(pid&&P[pid]) setTimeout(()=>launchAR(pid),300);
-  },800);
+  runDiagnostics();
 });
 </script>
 </body>
