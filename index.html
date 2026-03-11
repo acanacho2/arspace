@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>ARSpace — Debug</title>
+  <title>ARSpace</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
@@ -12,21 +12,7 @@
     :root{--ink:#0a0a0f;--cream:#f5f0e8;--warm:#e8dcc8;--accent:#c84b2f;--gold:#d4a853;--mid:#7a6f63;--glass:rgba(10,10,15,0.65);}
     html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'DM Sans',sans-serif;}
 
-    /* DEBUG SCREEN */
-    #dbg{position:fixed;inset:0;background:#0a0a0f;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:1rem;}
-    #dbg.off{display:none;}
-    .dbg-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:#f5f0e8;margin-bottom:.5rem;}
-    .dbg-list{width:100%;max-width:360px;display:flex;flex-direction:column;gap:.5rem;}
-    .dbg-row{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.05);border-radius:10px;padding:.7rem 1rem;}
-    .dbg-lbl{font-size:.82rem;color:#7a6f63;}
-    .dbg-val{font-size:.82rem;font-weight:700;color:#f5f0e8;}
-    .dbg-val.ok{color:#4ade80;}
-    .dbg-val.err{color:#f87171;}
-    .dbg-val.warn{color:#fbbf24;}
-    .dbg-btn{width:100%;max-width:360px;padding:1rem;background:#d4a853;color:#0a0a0f;border:none;border-radius:13px;font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;cursor:pointer;margin-top:.5rem;}
-    .dbg-note{font-size:.72rem;color:#7a6f63;text-align:center;max-width:300px;line-height:1.5;}
-
-    /* SPLASH */
+    /* ── SPLASH ── */
     #splash{position:fixed;inset:0;background:var(--ink);overflow-y:auto;z-index:50;padding:2rem 1.5rem 4rem;display:flex;flex-direction:column;align-items:center;transition:opacity .4s,transform .4s;}
     #splash.hide{opacity:0;transform:scale(1.03);pointer-events:none;}
     .logo{display:flex;align-items:center;gap:.6rem;align-self:flex-start;margin-bottom:2rem;}
@@ -48,12 +34,43 @@
     .card-dims{font-size:.58rem;color:var(--mid);text-align:center;}
     .badge{font-size:.52rem;font-weight:700;background:rgba(212,168,83,.15);color:var(--gold);border-radius:4px;padding:2px 6px;letter-spacing:.08em;}
 
-    /* AR */
-    #ar{position:fixed;inset:0;display:none;z-index:100;}
+    /* ── AR ── */
+    #ar{
+      position:fixed;inset:0;
+      display:none;
+      /* Stack context */
+      isolation: isolate;
+    }
     #ar.on{display:block;}
-    #vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
-    #cv{position:absolute;inset:0;z-index:2;pointer-events:none;display:block;}
-    #hud{position:absolute;inset:0;z-index:3;pointer-events:none;}
+
+    /* Video: lowest layer */
+    #vid{
+      position:absolute;
+      top:0;left:0;
+      width:100%;height:100%;
+      object-fit:cover;
+      z-index:1;
+      /* Make sure it doesn't cover canvas */
+      pointer-events:none;
+    }
+
+    /* Canvas: explicitly above video */
+    #cv{
+      position:absolute;
+      top:0;left:0;
+      z-index:10;
+      display:block;
+      /* CRITICAL: no pointer events so HUD works */
+      pointer-events:none;
+    }
+
+    /* HUD: topmost */
+    #hud{
+      position:absolute;inset:0;
+      z-index:20;
+      pointer-events:none;
+    }
+
     #topbar{position:absolute;top:0;left:0;right:0;padding:max(env(safe-area-inset-top),14px) 14px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);display:flex;align-items:center;justify-content:space-between;pointer-events:all;}
     .hbtn{width:42px;height:42px;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:var(--glass);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);}
     .pill{background:var(--glass);border:1px solid rgba(255,255,255,.15);border-radius:22px;padding:5px 13px 5px 9px;display:flex;align-items:center;gap:7px;backdrop-filter:blur(10px);}
@@ -101,15 +118,7 @@
 </head>
 <body>
 
-<!-- DEBUG SCREEN -->
-<div id="dbg">
-  <div class="dbg-title">🔍 Diagnóstico del dispositivo</div>
-  <div class="dbg-list" id="dbg-list"></div>
-  <button class="dbg-btn" id="dbg-btn" onclick="proceedToApp()">Continuar a la app →</button>
-  <p class="dbg-note" id="dbg-note">Verificando compatibilidad…</p>
-</div>
-
-<div id="load"><div class="sp"></div><div class="sp-t">Cargando…</div></div>
+<div id="load"><div class="sp"></div><div class="sp-t">Cargando ARSpace…</div></div>
 
 <div id="splash">
   <div class="logo"><div class="logo-box">🪑</div><div class="logo-txt">AR<span>Space</span></div></div>
@@ -119,9 +128,9 @@
   <div class="grid" id="grid"></div>
   <p class="lbl">▸ ¿Cómo funciona?</p>
   <div style="display:flex;gap:.6rem;width:100%;max-width:400px;">
-    <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;"><div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;">1</div><div style="font-size:.6rem;color:var(--mid);line-height:1.4;">Escaneá el QR</div></div>
-    <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;"><div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;">2</div><div style="font-size:.6rem;color:var(--mid);line-height:1.4;">El mueble aparece en tu espacio</div></div>
-    <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;"><div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;">3</div><div style="font-size:.6rem;color:var(--mid);line-height:1.4;">Movelo y ajustá el tamaño</div></div>
+    <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;"><div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;">1</div><div style="font-size:.6rem;color:var(--mid);">Escaneá el QR</div></div>
+    <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;"><div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;">2</div><div style="font-size:.6rem;color:var(--mid);">El mueble aparece</div></div>
+    <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center;"><div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem;">3</div><div style="font-size:.6rem;color:var(--mid);">Movelo y ajustá</div></div>
   </div>
 </div>
 
@@ -165,106 +174,6 @@
 <div id="toast"></div>
 
 <script>
-// ─── DIAGNOSIS ───
-async function runDiagnostics() {
-  const results = [];
-
-  // 1. Three.js loaded?
-  results.push({
-    label: 'Three.js (3D)',
-    ok: typeof THREE !== 'undefined',
-    val: typeof THREE !== 'undefined' ? 'Cargado ✓' : 'ERROR ✗'
-  });
-
-  // 2. WebGL support
-  let webgl = false, webglVer = 'No';
-  try {
-    const c = document.createElement('canvas');
-    const gl = c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl');
-    if (gl) { webgl = true; webglVer = gl instanceof WebGL2RenderingContext ? 'WebGL 2' : 'WebGL 1'; }
-  } catch(e) {}
-  results.push({ label: 'WebGL (gráficos)', ok: webgl, val: webgl ? webglVer+' ✓' : 'No soportado ✗' });
-
-  // 3. Camera API
-  const hasCam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-  results.push({ label: 'API de Cámara', ok: hasCam, val: hasCam ? 'Disponible ✓' : 'No disponible ✗' });
-
-  // 4. Try to actually get camera
-  let camOk = false, camMsg = '';
-  if (hasCam) {
-    try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      s.getTracks().forEach(t => t.stop());
-      camOk = true; camMsg = 'Permiso OK ✓';
-    } catch(e) {
-      camMsg = e.name === 'NotAllowedError' ? 'Permiso denegado ✗' : 'Error: ' + e.name + ' ✗';
-    }
-  } else {
-    camMsg = 'No disponible ✗';
-  }
-  results.push({ label: 'Permiso cámara', ok: camOk, val: camMsg });
-
-  // 5. Browser
-  const ua = navigator.userAgent;
-  const isChrome = /Chrome\//.test(ua) && !/Edg\//.test(ua);
-  const isSamsung = /SamsungBrowser/.test(ua);
-  const isFirefox = /Firefox\//.test(ua);
-  const browserName = isChrome ? 'Chrome' : isSamsung ? 'Samsung' : isFirefox ? 'Firefox' : 'Otro';
-  results.push({ label: 'Navegador', ok: isChrome || isSamsung, val: browserName });
-
-  // 6. Try WebGL renderer
-  let rendererOk = false;
-  try {
-    const c2 = document.createElement('canvas');
-    c2.width = 100; c2.height = 100;
-    const r = new THREE.WebGLRenderer({ canvas: c2, alpha: true });
-    r.render(new THREE.Scene(), new THREE.PerspectiveCamera());
-    r.dispose();
-    rendererOk = true;
-  } catch(e) {}
-  results.push({ label: 'Renderizado 3D', ok: rendererOk, val: rendererOk ? 'Funciona ✓' : 'Falla ✗' });
-
-  // Render results
-  const list = document.getElementById('dbg-list');
-  list.innerHTML = '';
-  let allOk = true;
-  results.forEach(r => {
-    if (!r.ok) allOk = false;
-    const row = document.createElement('div');
-    row.className = 'dbg-row';
-    row.innerHTML = `<span class="dbg-lbl">${r.label}</span><span class="dbg-val ${r.ok?'ok':'err'}">${r.val}</span>`;
-    list.appendChild(row);
-  });
-
-  const note = document.getElementById('dbg-note');
-  const btn = document.getElementById('dbg-btn');
-  if (allOk) {
-    note.textContent = '✅ Todo OK — la app debería funcionar.';
-    btn.textContent = 'Abrir ARSpace →';
-  } else if (!webgl || !rendererOk) {
-    note.textContent = '⚠️ Tu navegador bloquea WebGL. Probá activarlo en Configuración → Chrome → Flags → WebGL.';
-    btn.textContent = 'Intentar igual →';
-  } else if (!camOk) {
-    note.textContent = '⚠️ No hay permiso de cámara. Tocá "Continuar" y aceptá el permiso cuando aparezca.';
-    btn.textContent = 'Intentar igual →';
-  } else {
-    note.textContent = '⚠️ Hay un problema. Intentá con Chrome actualizado.';
-    btn.textContent = 'Intentar igual →';
-  }
-}
-
-function proceedToApp() {
-  document.getElementById('dbg').classList.add('off');
-  buildCards();
-  document.getElementById('load').classList.remove('off');
-  setTimeout(() => {
-    document.getElementById('load').classList.add('off');
-    const pid = new URLSearchParams(window.location.search).get('product');
-    if (pid && P[pid]) setTimeout(() => launchAR(pid), 300);
-  }, 600);
-}
-
-// ─── CATALOG ───
 const P = {
   sofa:     {name:'Sofá Milano',    emoji:'🛋️', price:'$85.000',  dims:'220×90×80 cm · Gris perla', sz:[2.2,0.8,0.9],   col:0x8a8a8a, leg:0x5d4037, build:mkSofa},
   armchair: {name:'Sillón Oslo',    emoji:'🪑', price:'$32.000',  dims:'85×75×95 cm · Mostaza',     sz:[0.85,0.95,0.75], col:0xcb9a2a, leg:0x4e342e, build:mkChair},
@@ -274,28 +183,18 @@ const P = {
 
 function buildCards() {
   const g = document.getElementById('grid');
-  if (g.children.length > 0) return;
   const base = window.location.href.split('?')[0];
   Object.entries(P).forEach(([id,p]) => {
-    const c = document.createElement('div');
-    c.className = 'card';
-    c.onclick = () => launchAR(id);
-    const sl = document.createElement('div'); sl.className = 'scan-line'; c.appendChild(sl);
-    const qb = document.createElement('div'); qb.className = 'qr-box'; qb.id = 'q'+id; c.appendChild(qb);
+    const c = document.createElement('div'); c.className='card'; c.onclick=()=>launchAR(id);
+    const sl = document.createElement('div'); sl.className='scan-line'; c.appendChild(sl);
+    const qb = document.createElement('div'); qb.className='qr-box'; qb.id='q'+id; c.appendChild(qb);
     c.innerHTML += `<div class="card-name">${p.emoji} ${p.name}</div><div class="card-dims">${p.dims.split('·')[0].trim()}</div><div class="badge">AR READY</div>`;
-    c.insertBefore(qb, c.children[1]);
+    c.insertBefore(qb,c.children[1]);
     g.appendChild(c);
-    try {
-      new QRCode(document.getElementById('q'+id), {
-        text: base+'?product='+id, width:86, height:86,
-        colorDark:'#000000', colorLight:'#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
-      });
-    } catch(e) {}
+    try { new QRCode(document.getElementById('q'+id),{text:base+'?product='+id,width:86,height:86,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); } catch(e){}
   });
 }
 
-// ─── THREE STATE ───
 let renderer, scene, camera, model, animId;
 let rotY=0, scaleV=1, placed=false;
 let drag=false, lastT=null, pinch=null;
@@ -317,17 +216,19 @@ async function launchAR(id) {
   document.getElementById('hint').classList.remove('off');
   closePanel();
 
+  // Start camera
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
-    document.getElementById('vid').srcObject = stream;
+    const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+    document.getElementById('vid').srcObject = s;
   } catch(e) {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({video:true});
-      document.getElementById('vid').srcObject = stream;
+      const s = await navigator.mediaDevices.getUserMedia({video:true});
+      document.getElementById('vid').srcObject = s;
     } catch(e2) { toast('⚠️ Sin acceso a cámara'); }
   }
 
-  initThree(p);
+  // Wait a tick so #ar is rendered, then init Three
+  requestAnimationFrame(() => initThree(p));
 }
 
 function exitAR() {
@@ -336,44 +237,53 @@ function exitAR() {
   document.getElementById('ar').classList.remove('on');
   document.getElementById('splash').classList.remove('hide');
   if (animId) { cancelAnimationFrame(animId); animId=null; }
+  if (renderer) { renderer.dispose(); renderer=null; }
   closePanel();
 }
 
 function initThree(prod) {
   if (animId) { cancelAnimationFrame(animId); animId=null; }
   if (renderer) { renderer.dispose(); renderer=null; }
+
   const cv = document.getElementById('cv');
   const W = window.innerWidth, H = window.innerHeight;
-  cv.width=W; cv.height=H;
-  cv.style.width=W+'px'; cv.style.height=H+'px';
 
-  try {
-    renderer = new THREE.WebGLRenderer({canvas:cv, alpha:true, antialias:true, premultipliedAlpha:false});
-  } catch(e) {
-    // fallback: no antialias
-    renderer = new THREE.WebGLRenderer({canvas:cv, alpha:true, premultipliedAlpha:false});
-  }
-  renderer.setSize(W,H,false);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-  renderer.setClearColor(0x000000,0);
-  renderer.shadowMap.enabled=true;
+  // Set canvas size explicitly
+  cv.width = W * window.devicePixelRatio;
+  cv.height = H * window.devicePixelRatio;
+  cv.style.width = W + 'px';
+  cv.style.height = H + 'px';
 
-  scene=new THREE.Scene();
-  camera=new THREE.PerspectiveCamera(60,W/H,0.01,100);
-  camera.position.set(0,1.6,0);
+  renderer = new THREE.WebGLRenderer({
+    canvas: cv,
+    alpha: true,
+    antialias: false,        // off for performance on mobile
+    premultipliedAlpha: false,
+    powerPreference: 'high-performance'
+  });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setClearColor(0x000000, 0);  // transparent
+  renderer.autoClear = true;
 
-  scene.add(new THREE.AmbientLight(0xffffff,1.2));
-  const sun=new THREE.DirectionalLight(0xffffff,1.8);
-  sun.position.set(4,8,4); sun.castShadow=true; sun.shadow.mapSize.set(512,512); scene.add(sun);
-  const fill=new THREE.DirectionalLight(0xaabbff,0.5); fill.position.set(-4,3,-3); scene.add(fill);
+  scene = new THREE.Scene();
 
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.ShadowMaterial({opacity:.25}));
-  floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+  camera = new THREE.PerspectiveCamera(60, W/H, 0.1, 100);
+  camera.position.set(0, 1.6, 0);
+  camera.lookAt(0, 0, -1.5);
 
-  if(model) scene.remove(model);
-  model=new THREE.Group();
-  prod.build(model,prod);
-  model.position.set(0,0,-1.5);
+  // Strong lighting so model is clearly visible
+  scene.add(new THREE.AmbientLight(0xffffff, 2.0));
+  const sun = new THREE.DirectionalLight(0xffffff, 2.0);
+  sun.position.set(2, 5, 3);
+  scene.add(sun);
+
+  // Build model
+  if (model) scene.remove(model);
+  model = new THREE.Group();
+  prod.build(model, prod);
+  // Position directly in front of camera, slightly elevated so it's visible
+  model.position.set(0, -0.5, -2.5);
   scene.add(model);
 
   setupTouch();
@@ -381,53 +291,76 @@ function initThree(prod) {
 }
 
 function loop() {
-  animId=requestAnimationFrame(loop);
-  if(!model) return;
-  if(!placed) model.position.y=Math.sin(Date.now()*.002)*.05;
-  model.rotation.y=rotY;
+  animId = requestAnimationFrame(loop);
+  if (!model || !renderer) return;
+  if (!placed) model.position.y = -0.5 + Math.sin(Date.now()*.002)*.08;
+  model.rotation.y = rotY;
   model.scale.setScalar(scaleV);
-  renderer.render(scene,camera);
+  renderer.render(scene, camera);
 }
 
 function sh(m){m.castShadow=m.receiveShadow=true;}
 
 function mkSofa(g,p){
-  const [W,H,D]=p.sz,bm=new THREE.MeshLambertMaterial({color:p.col}),lm=new THREE.MeshLambertMaterial({color:p.leg}),cm=new THREE.MeshLambertMaterial({color:0xb8b8b8});
+  const [W,H,D]=p.sz;
+  const bm=new THREE.MeshLambertMaterial({color:p.col});
+  const lm=new THREE.MeshLambertMaterial({color:p.leg});
+  const cm=new THREE.MeshLambertMaterial({color:0xcccccc});
   let x;
   x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.36,D),bm);x.position.y=H*.18;sh(x);g.add(x);
   x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.56,D*.16),bm);x.position.set(0,H*.56,-D/2+D*.08);sh(x);g.add(x);
-  for(const sx of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.075,H*.44,D),bm);x.position.set(sx*(W/2-W*.037),H*.38,0);sh(x);g.add(x);}
+  for(const s of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.075,H*.44,D),bm);x.position.set(s*(W/2-W*.037),H*.38,0);sh(x);g.add(x);}
   for(let i=0;i<3;i++){x=new THREE.Mesh(new THREE.BoxGeometry(W/3*.86,H*.13,D*.72),cm);x.position.set(-W/3+i*W/3,H*.44,D*.05);sh(x);g.add(x);}
-  for(const sx of[-1,1])for(const sz of[-1,1]){x=new THREE.Mesh(new THREE.CylinderGeometry(.03,.025,H*.14,8),lm);x.position.set(sx*(W/2-.1),H*.07,sz*(D/2-.1));sh(x);g.add(x);}
+  for(const s of[-1,1])for(const z of[-1,1]){x=new THREE.Mesh(new THREE.CylinderGeometry(.03,.025,H*.14,8),lm);x.position.set(s*(W/2-.1),H*.07,z*(D/2-.1));sh(x);g.add(x);}
 }
 function mkChair(g,p){
-  const [W,H,D]=p.sz,bm=new THREE.MeshLambertMaterial({color:p.col}),lm=new THREE.MeshLambertMaterial({color:p.leg});
+  const [W,H,D]=p.sz;
+  const bm=new THREE.MeshLambertMaterial({color:p.col});
+  const lm=new THREE.MeshLambertMaterial({color:p.leg});
   let x;
   x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.3,D),bm);x.position.y=H*.25;sh(x);g.add(x);
   x=new THREE.Mesh(new THREE.BoxGeometry(W*.82,H*.48,D*.18),bm);x.position.set(0,H*.64,-D/2+.09);sh(x);g.add(x);
-  for(const sx of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.1,H*.34,D),bm);x.position.set(sx*(W/2-.05),H*.44,0);sh(x);g.add(x);}
+  for(const s of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.1,H*.34,D),bm);x.position.set(s*(W/2-.05),H*.44,0);sh(x);g.add(x);}
   x=new THREE.Mesh(new THREE.BoxGeometry(W*.73,H*.13,D*.78),new THREE.MeshLambertMaterial({color:0xd4a040}));x.position.set(0,H*.43,0);sh(x);g.add(x);
-  for(const sx of[-1,1])for(const sz of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(.04,H*.2,.04),lm);x.position.set(sx*(W/2-.07),H*.1,sz*(D/2-.07));sh(x);g.add(x);}
+  for(const s of[-1,1])for(const z of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(.04,H*.2,.04),lm);x.position.set(s*(W/2-.07),H*.1,z*(D/2-.07));sh(x);g.add(x);}
 }
 function mkTable(g,p){
-  const [W,H,D]=p.sz,bm=new THREE.MeshLambertMaterial({color:p.col}),lm=new THREE.MeshLambertMaterial({color:p.leg});
+  const [W,H,D]=p.sz;
+  const bm=new THREE.MeshLambertMaterial({color:p.col});
+  const lm=new THREE.MeshLambertMaterial({color:p.leg});
   let x;
   x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.07,D),bm);x.position.y=H;sh(x);g.add(x);
-  for(const sx of[-1,1])for(const sz of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(.065,H*.95,.065),lm);x.position.set(sx*(W/2-.09),H*.475,sz*(D/2-.09));sh(x);g.add(x);}
+  for(const s of[-1,1])for(const z of[-1,1]){x=new THREE.Mesh(new THREE.BoxGeometry(.065,H*.95,.065),lm);x.position.set(s*(W/2-.09),H*.475,z*(D/2-.09));sh(x);g.add(x);}
   x=new THREE.Mesh(new THREE.BoxGeometry(W*.72,.04,.04),lm);x.position.set(0,H*.32,0);sh(x);g.add(x);
 }
 function mkBed(g,p){
-  const [W,H,D]=p.sz,bm=new THREE.MeshLambertMaterial({color:p.col}),fm=new THREE.MeshLambertMaterial({color:p.leg}),wm=new THREE.MeshLambertMaterial({color:0xffffff});
+  const [W,H,D]=p.sz;
+  const bm=new THREE.MeshLambertMaterial({color:p.col});
+  const fm=new THREE.MeshLambertMaterial({color:p.leg});
   let x;
   x=new THREE.Mesh(new THREE.BoxGeometry(W*1.03,H,D*1.03),fm);x.position.y=H/2;sh(x);g.add(x);
-  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.34,D*.83),wm);x.position.set(0,H+H*.17,-D*.04);sh(x);g.add(x);
+  x=new THREE.Mesh(new THREE.BoxGeometry(W,H*.34,D*.83),new THREE.MeshLambertMaterial({color:0xffffff}));x.position.set(0,H+H*.17,-D*.04);sh(x);g.add(x);
   x=new THREE.Mesh(new THREE.BoxGeometry(W,H*1.35,D*.09),bm);x.position.set(0,H*.68,-D/2-.04);sh(x);g.add(x);
   for(const px of[-.28,.28]){x=new THREE.Mesh(new THREE.BoxGeometry(W*.24,H*.11,D*.16),new THREE.MeshLambertMaterial({color:0xeeeedd}));x.position.set(px*W,H+H*.36,-D*.28);sh(x);g.add(x);}
 }
 
 function placeToggle(){
-  if(!placed){placed=true;model.position.y=0;document.getElementById('ret').classList.add('off');document.getElementById('hint').classList.add('off');document.getElementById('pbtn').textContent='↺ Mover / Resetear';setTimeout(()=>document.getElementById('panel').classList.add('on'),600);toast('📐 ¡Colocado! Arrastrá para mover');}
-  else{placed=false;model.position.set(0,0,-1.5);document.getElementById('ret').classList.remove('off');document.getElementById('hint').classList.remove('off');document.getElementById('pbtn').textContent='📍 Colocar aquí';closePanel();}
+  if(!placed){
+    placed=true;
+    model.position.y=0;
+    document.getElementById('ret').classList.add('off');
+    document.getElementById('hint').classList.add('off');
+    document.getElementById('pbtn').textContent='↺ Mover / Resetear';
+    setTimeout(()=>document.getElementById('panel').classList.add('on'),600);
+    toast('📐 ¡Colocado! Arrastrá para mover');
+  } else {
+    placed=false;
+    model.position.set(0,-0.5,-2.5);
+    document.getElementById('ret').classList.remove('off');
+    document.getElementById('hint').classList.remove('off');
+    document.getElementById('pbtn').textContent='📍 Colocar aquí';
+    closePanel();
+  }
 }
 function rot(d){rotY+=d*Math.PI/8;}
 function onScale(v){scaleV=parseFloat(v);document.getElementById('slv').textContent=Math.round(scaleV*100)+'%';}
@@ -443,8 +376,17 @@ function setupTouch(){
   },{passive:true});
   el.addEventListener('touchmove',e=>{
     if(e.target.closest('#ctrl')||e.target.closest('#topbar')||e.target.closest('#panel'))return;
-    if(e.touches.length===1&&drag&&lastT&&model){const dx=e.touches[0].clientX-lastT.x,dy=e.touches[0].clientY-lastT.y;lastT={x:e.touches[0].clientX,y:e.touches[0].clientY};model.position.x+=dx*.006;model.position.z+=dy*.006;}
-    if(e.touches.length===2&&pinch){const d=pd(e.touches),r=d/pinch;scaleV=Math.max(.3,Math.min(2.5,scaleV*r));pinch=d;document.getElementById('sl').value=scaleV;document.getElementById('slv').textContent=Math.round(scaleV*100)+'%';}
+    if(e.touches.length===1&&drag&&lastT&&model){
+      const dx=e.touches[0].clientX-lastT.x,dy=e.touches[0].clientY-lastT.y;
+      lastT={x:e.touches[0].clientX,y:e.touches[0].clientY};
+      model.position.x+=dx*.006;model.position.z+=dy*.006;
+    }
+    if(e.touches.length===2&&pinch){
+      const d=pd(e.touches),r=d/pinch;
+      scaleV=Math.max(.3,Math.min(2.5,scaleV*r));pinch=d;
+      document.getElementById('sl').value=scaleV;
+      document.getElementById('slv').textContent=Math.round(scaleV*100)+'%';
+    }
   },{passive:true});
   el.addEventListener('touchend',()=>{drag=false;pinch=null;},{passive:true});
 }
@@ -453,12 +395,20 @@ function pd(ts){const dx=ts[0].clientX-ts[1].clientX,dy=ts[0].clientY-ts[1].clie
 window.addEventListener('resize',()=>{
   if(!renderer||!camera)return;
   const W=window.innerWidth,H=window.innerHeight;
-  const cv=document.getElementById('cv');cv.width=W;cv.height=H;cv.style.width=W+'px';cv.style.height=H+'px';
-  camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H,false);
+  const cv=document.getElementById('cv');
+  cv.width=W*window.devicePixelRatio;cv.height=H*window.devicePixelRatio;
+  cv.style.width=W+'px';cv.style.height=H+'px';
+  camera.aspect=W/H;camera.updateProjectionMatrix();
+  renderer.setSize(W,H);
 });
 
 window.addEventListener('load',()=>{
-  runDiagnostics();
+  buildCards();
+  setTimeout(()=>{
+    document.getElementById('load').classList.add('off');
+    const pid=new URLSearchParams(window.location.search).get('product');
+    if(pid&&P[pid]) setTimeout(()=>launchAR(pid),300);
+  },800);
 });
 </script>
 </body>
