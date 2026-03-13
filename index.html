@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>ARSpace</title>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#0a0a0f;--cream:#f5f0e8;--warm:#e8dcc8;--accent:#c84b2f;--gold:#d4a853;--mid:#7a6f63;--glass:rgba(10,10,15,.65)}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'DM Sans',sans-serif}
+
+/* LOAD */
+#load{position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;z-index:200;transition:opacity .5s}
+#load.off{opacity:0;pointer-events:none}
+.sp{width:42px;height:42px;border:3px solid rgba(212,168,83,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+.sp-t{font-family:'Syne',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mid)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;background:var(--ink);overflow-y:auto;z-index:10;padding:2rem 1.5rem 4rem;display:flex;flex-direction:column;align-items:center;transition:opacity .4s}
+#splash.hide{opacity:0;pointer-events:none}
+.logo{display:flex;align-items:center;gap:.6rem;align-self:flex-start;margin-bottom:2rem}
+.logo-box{width:38px;height:38px;border:2px solid var(--gold);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-txt{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--cream)}
+.logo-txt span{color:var(--gold)}
+h1{font-family:'Syne',sans-serif;font-size:clamp(1.7rem,6vw,2.6rem);font-weight:800;color:var(--cream);line-height:1.1;letter-spacing:-.03em;margin-bottom:.6rem;align-self:flex-start}
+h1 em{font-style:normal;color:var(--gold)}
+.sub{font-size:.9rem;color:var(--mid);line-height:1.6;margin-bottom:1.8rem;align-self:flex-start}
+.lbl{font-family:'Syne',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--mid);margin-bottom:.8rem;align-self:flex-start}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;width:100%;max-width:400px;margin-bottom:2rem}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1rem .8rem;display:flex;flex-direction:column;align-items:center;gap:.6rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.card:active{background:rgba(212,168,83,.12);border-color:var(--gold);transform:scale(.97)}
+.qr-box{background:#fff;border-radius:7px;padding:5px;width:96px;height:96px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qr-box canvas,.qr-box img{display:block!important;width:86px!important;height:86px!important}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);pointer-events:none;animation:scan 2.5s ease-in-out infinite}
+@keyframes scan{0%{top:8%;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:92%;opacity:0}}
+.card-name{font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;color:var(--cream);text-align:center}
+.card-dims{font-size:.58rem;color:var(--mid);text-align:center}
+.badge{font-size:.52rem;font-weight:700;background:rgba(212,168,83,.15);color:var(--gold);border-radius:4px;padding:2px 6px;letter-spacing:.08em}
+.steps{display:flex;gap:.6rem;width:100%;max-width:400px}
+.step{flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.8rem .6rem;text-align:center}
+.step-n{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:.25rem}
+.step-t{font-size:.6rem;color:var(--mid)}
+
+/* VISTA 3D */
+#v3d{position:fixed;inset:0;display:none;flex-direction:column;background:#1a1a2e;z-index:20}
+#v3d.on{display:flex}
+model-viewer{width:100%;flex:1;--poster-color:#1a1a2e}
+
+/* VISTA AR */
+#var{position:fixed;inset:0;display:none;z-index:30}
+#var.on{display:block}
+#vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#cv{position:absolute;inset:0;width:100%;height:100%;pointer-events:all}
+
+/* UI AR */
+#ar-ui{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+
+/* TOPBAR */
+.topbar{padding:max(env(safe-area-inset-top),14px) 14px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.85),transparent);display:flex;align-items:center;justify-content:space-between;pointer-events:all}
+.hbtn{width:42px;height:42px;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:var(--glass);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
+.pill{background:var(--glass);border:1px solid rgba(255,255,255,.15);border-radius:22px;padding:5px 13px 5px 9px;display:flex;align-items:center;gap:7px;backdrop-filter:blur(10px)}
+.dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.pill-nm{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:600;color:#fff}
+
+/* RETICULO */
+#ret{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:35;transition:opacity .3s}
+#ret.off{opacity:0}
+.ro{width:68px;height:68px;border:2px solid rgba(255,255,255,.8);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:rp 2s ease-in-out infinite}
+.ri{width:9px;height:9px;background:#fff;border-radius:50%}
+@keyframes rp{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.1);opacity:1}}
+#hint{position:absolute;top:calc(50% + 52px);left:50%;transform:translateX(-50%);background:var(--glass);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:8px 18px;font-size:.78rem;color:#fff;backdrop-filter:blur(10px);white-space:nowrap;pointer-events:none;transition:opacity .3s;z-index:35}
+#hint.off{opacity:0}
+
+/* CONTROLES */
+.ctrl{padding:14px 14px max(env(safe-area-inset-bottom),18px);background:linear-gradient(to top,rgba(0,0,0,.9),transparent);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:all}
+.brow{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:center}
+.abtn{height:50px;border-radius:13px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 1.1rem}
+.abtn:active{transform:scale(.94)}
+.a-white{background:#fff;color:var(--ink);box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.a-gold{background:var(--gold);color:var(--ink);box-shadow:0 4px 18px rgba(212,168,83,.4)}
+.a-dark{background:var(--glass);border:1px solid rgba(255,255,255,.2);color:#fff;backdrop-filter:blur(8px)}
+#dims{background:var(--glass);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:6px 14px;font-family:'Syne',sans-serif;font-size:.75rem;font-weight:700;color:#fff;backdrop-filter:blur(10px)}
+.srow{display:flex;align-items:center;gap:9px;width:100%;max-width:330px}
+.slbl{font-family:'Syne',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);min-width:34px}
+input[type=range]{flex:1;-webkit-appearance:none;height:3px;border-radius:3px;background:rgba(255,255,255,.25);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.5);cursor:pointer}
+
+/* LANDSCAPE */
+@media (orientation:landscape){
+  /* Solo reducir tamaño de controles, no cambiar layout */
+  .ctrl{padding:8px 14px 8px}
+  .abtn{height:40px;font-size:.72rem}
+  .srow{max-width:280px}
+  #dims{font-size:.68rem}
+}
+
+/* PANEL */
+.panel{position:absolute;bottom:0;left:0;right:0;background:rgba(245,240,232,.97);border-radius:22px 22px 0 0;padding:1.3rem 1.3rem max(env(safe-area-inset-bottom),18px);transform:translateY(100%);transition:transform .38s cubic-bezier(.34,1.56,.64,1);z-index:50;pointer-events:all}
+.panel.on{transform:translateY(0)}
+.hdl{width:38px;height:4px;border-radius:2px;background:rgba(0,0,0,.12);margin:0 auto 1rem}
+.prow{display:flex;gap:.9rem;align-items:flex-start;margin-bottom:.9rem}
+.pico{font-size:2rem;background:var(--warm);border-radius:11px;padding:.5rem;flex-shrink:0}
+.pname{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:800;color:var(--ink);margin-bottom:.15rem}
+.pdims{font-size:.75rem;color:var(--mid);margin-bottom:.35rem}
+.pprice{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--accent)}
+.pbtns{display:flex;gap:.7rem}
+.pb{flex:1;padding:.82rem;border-radius:11px;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer}
+.pb-dk{background:var(--ink);color:#fff}
+.pb-lt{background:var(--warm);color:var(--ink)}
+.xp{position:absolute;top:.9rem;right:.9rem;width:28px;height:28px;border-radius:50%;background:var(--warm);border:none;cursor:pointer;font-size:.85rem}
+
+/* LOADER AR */
+#mldr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--glass);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:1.2rem 2rem;display:flex;flex-direction:column;align-items:center;gap:.6rem;backdrop-filter:blur(12px);z-index:45;transition:opacity .3s}
+#mldr.off{opacity:0;pointer-events:none}
+.ml-sp{width:32px;height:32px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.ml-tx{font-family:'Syne',sans-serif;font-size:.75rem;font-weight:700;color:#fff}
+
+/* TOAST */
+#toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%) translateY(14px);background:rgba(10,10,15,.93);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:8px 18px;color:#fff;font-size:.78rem;backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:all .28s;z-index:9999;white-space:nowrap}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="load"><div class="sp"></div><div class="sp-t">Cargando ARSpace…</div></div>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="logo"><div class="logo-box">🚲</div><div class="logo-txt">AR<span>Space</span></div></div>
+  <h1>Visualizá el equipo<br/>en <em>tu espacio</em></h1>
+  <p class="sub">Tocá la tarjeta para ver el producto en 3D y en tu espacio real.</p>
+  <p class="lbl">▸ Tocá un producto</p>
+  <div class="grid" id="grid"></div>
+  <p class="lbl">▸ ¿Cómo funciona?</p>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-t">Tocá la tarjeta</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-t">Mirá el modelo 3D</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-t">Ponelo en tu espacio</div></div>
+  </div>
+</div>
+
+<!-- VISTA 3D -->
+<div id="v3d">
+  <div class="topbar">
+    <button class="hbtn" onclick="exit3d()">←</button>
+    <div class="pill"><div class="dot"></div><div class="pill-nm" id="nm3d">…</div></div>
+    <button class="hbtn" onclick="exit3d()">✕</button>
+  </div>
+  <model-viewer id="mv"
+    shadow-intensity="1.5" shadow-softness="0.8"
+    camera-controls touch-action="pan-y"
+    auto-rotate auto-rotate-delay="2000" rotation-per-second="15deg"
+    environment-image="neutral" exposure="1.1"
+    style="background-color:#1a1a2e"
+  ></model-viewer>
+  <div class="ctrl">
+    <div id="dims">📐 …</div>
+    <div class="brow">
+      <button class="abtn a-dark" onclick="toggleRot()">⟳ Rotar</button>
+      <button class="abtn a-gold" onclick="goAR()">📷 Ver en tu espacio</button>
+      <button class="abtn a-dark" onclick="openPanel('p3d')">ℹ️ Info</button>
+    </div>
+  </div>
+  <div class="panel" id="p3d">
+    <button class="xp" onclick="closePanel('p3d')">✕</button>
+    <div class="hdl"></div>
+    <div class="prow">
+      <div class="pico" id="ico3d">🚲</div>
+      <div><div class="pname" id="nm3dp">…</div><div class="pdims" id="dm3d">…</div><div class="pprice" id="pr3d">…</div></div>
+    </div>
+    <div class="pbtns">
+      <button class="pb pb-lt" onclick="closePanel('p3d')">Seguir viendo</button>
+      <button class="pb pb-dk" onclick="toast('✅ ¡Agregado!')">🛒 Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- VISTA AR -->
+<div id="var">
+  <video id="vid" autoplay playsinline muted></video>
+  <canvas id="cv"></canvas>
+  <div id="ar-ui">
+    <div class="topbar">
+      <button class="hbtn" onclick="exitAR()">←</button>
+      <div class="pill"><div class="dot"></div><div class="pill-nm" id="nmar">…</div></div>
+      <button class="hbtn" onclick="exitAR()">✕</button>
+    </div>
+    <div class="spacer" style="flex:1"></div>
+    <div class="ctrl">
+      <div class="srow">
+        <span class="slbl">Escala</span>
+        <input type="range" id="sl" min="15" max="200" step="5" value="130" oninput="onScale(this.value)">
+        <span class="slbl" id="slv" style="text-align:right;min-width:44px">130%</span>
+      </div>
+      <div class="brow">
+        <button class="abtn a-dark" onclick="rot(-1)">↺ Girar</button>
+        <button class="abtn a-white" id="pbtn" onclick="placeToggle()">📍 Colocar aquí</button>
+        <button class="abtn a-dark" onclick="rot(1)">↻ Girar</button>
+      </div>
+    </div>
+  </div>
+  <div id="ret"><div class="ro"><div class="ri"></div></div></div>
+  <div id="hint">1 dedo: girar · 2 dedos: mover · pellizco: escala</div>
+  <div id="mldr">
+  <div class="ml-sp"></div>
+  <div class="ml-tx" id="ml-tx">Iniciando…</div>
+  <div style="width:180px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden;margin-top:4px">
+    <div id="ml-bar" style="height:100%;width:0%;background:var(--gold);border-radius:2px;transition:width .3s"></div>
+  </div>
+</div>
+  <div class="panel" id="par">
+    <button class="xp" onclick="closePanel('par')">✕</button>
+    <div class="hdl"></div>
+    <div class="prow">
+      <div class="pico" id="icoar">🚲</div>
+      <div><div class="pname" id="nmar2">…</div><div class="pdims" id="dmar">…</div><div class="pprice" id="prar">…</div></div>
+    </div>
+    <div class="pbtns">
+      <button class="pb pb-lt" onclick="closePanel('par')">Seguir viendo</button>
+      <button class="pb pb-dk" onclick="toast('✅ ¡Agregado!')">🛒 Agregar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  CATÁLOGO
+// ═══════════════════════════════════════
+const P = {
+  bici: {
+    name:  'Bici Armada',
+    emoji: '🚲',
+    price: '$150.000',
+    dims:  '60×74×123 cm · Gris',
+    sz:    [0.60, 1.23, 0.74],
+    glb:   'models/BICI_ARMADA.glb',
+    floorOffset: -0.5,
+  },
+  // otro: { name:'...', emoji:'🪑', price:'$...', dims:'...', sz:[w,h,d], glb:'models/x.glb', floorOffset:0 },
+};
+// ═══════════════════════════════════════
+
+let cur = null;
+let autoRot = true;
+
+// THREE.JS STATE
+let renderer=null, scene=null, camera=null, model=null, animId=null;
+let rotY=0, scaleV=1.3, placed=false, baseScale=1.0, baseOffsetY=0;
+let drag=false, lastT=null, pinchDist=null;
+
+// ── INIT ──
+function init() {
+  buildCards();
+  // Ocultar loader
+  setTimeout(() => {
+    document.getElementById('load').classList.add('off');
+    const pid = new URLSearchParams(location.search).get('product');
+    if (pid && P[pid]) setTimeout(() => launch(pid), 300);
+  }, 700);
+}
+
+// Esperar a que todo esté listo
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+// ── CARDS ──
+function buildCards() {
+  const g = document.getElementById('grid');
+  const base = location.href.split('?')[0];
+  Object.entries(P).forEach(([id, p]) => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.onclick = () => launch(id);
+    const sl = document.createElement('div'); sl.className = 'scan-line'; c.appendChild(sl);
+    const qb = document.createElement('div'); qb.className = 'qr-box'; qb.id = 'q' + id; c.appendChild(qb);
+    c.innerHTML += `<div class="card-name">${p.emoji} ${p.name}</div><div class="card-dims">${p.dims.split('·')[0].trim()}</div><div class="badge">AR READY</div>`;
+    c.insertBefore(qb, c.children[1]);
+    g.appendChild(c);
+    try {
+      new QRCode(qb, { text: base+'?product='+id, width:86, height:86, colorDark:'#000', colorLight:'#fff', correctLevel: QRCode.CorrectLevel.M });
+    } catch(e) {}
+  });
+}
+
+// ── LAUNCH 3D ──
+function launch(id) {
+  const p = P[id];
+  if (!p) return;
+  cur = {id, ...p};
+  const [w,h,d] = p.sz;
+  document.getElementById('nm3d').textContent = p.name;
+  document.getElementById('ico3d').textContent = p.emoji;
+  document.getElementById('nm3dp').textContent = p.name;
+  document.getElementById('dm3d').textContent = p.dims;
+  document.getElementById('pr3d').textContent = p.price;
+  document.getElementById('dims').textContent = `📐 ${Math.round(w*100)}×${Math.round(d*100)}×${Math.round(h*100)} cm`;
+  const mv = document.getElementById('mv');
+  mv.setAttribute('src', p.glb);
+  mv.setAttribute('alt', p.name);
+  autoRot = true;
+  mv.setAttribute('auto-rotate', '');
+  document.getElementById('v3d').classList.add('on');
+  document.getElementById('splash').classList.add('hide');
+  closePanel('p3d');
+}
+
+function exit3d() {
+  document.getElementById('v3d').classList.remove('on');
+  document.getElementById('splash').classList.remove('hide');
+  document.getElementById('mv').removeAttribute('src');
+  closePanel('p3d');
+}
+
+function toggleRot() {
+  const mv = document.getElementById('mv');
+  autoRot = !autoRot;
+  autoRot ? mv.setAttribute('auto-rotate','') : mv.removeAttribute('auto-rotate');
+  toast(autoRot ? '⟳ Auto-rotación activada' : '⏸ Rotación pausada');
+}
+
+// ── GO AR ──
+async function goAR() {
+  if (!cur) return;
+  const p = cur;
+  document.getElementById('nmar').textContent = p.name;
+  document.getElementById('icoar').textContent = p.emoji;
+  document.getElementById('nmar2').textContent = p.name;
+  document.getElementById('dmar').textContent = p.dims;
+  document.getElementById('prar').textContent = p.price;
+  placed = false; rotY = 0; scaleV = 1.3;
+  document.getElementById('sl').value = 130;
+  document.getElementById('slv').textContent = '130%';
+  document.getElementById('pbtn').textContent = '📍 Colocar aquí';
+  document.getElementById('ret').classList.remove('off');
+  document.getElementById('hint').classList.remove('off');
+  document.getElementById('mldr').classList.remove('off');
+  document.querySelector('.ml-tx').textContent = 'Cargando modelo…';
+  closePanel('par');
+  document.getElementById('var').classList.add('on');
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+    document.getElementById('vid').srcObject = s;
+    toast('📷 Cámara OK');
+  } catch(e) {
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({video:true});
+      document.getElementById('vid').srcObject = s;
+      toast('📷 Cámara OK (frontal)');
+    } catch(e2) { toast('⚠️ Sin acceso a cámara: ' + e2.message); }
+  }
+  toast('⏳ Iniciando Three.js…');
+  initThree(p);
+}
+
+function exitAR() {
+  const v = document.getElementById('vid');
+  if (v.srcObject) { v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject = null; }
+  document.getElementById('var').classList.remove('on');
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  if (renderer) { renderer.dispose(); renderer = null; }
+  scene = null; model = null;
+  closePanel('par');
+}
+
+// ── THREE.JS ──
+async function initThree(prod) {
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  if (renderer) { renderer.dispose(); renderer = null; }
+  const cv = document.getElementById('cv');
+  const W = window.innerWidth, H = window.innerHeight;
+  const dpr = Math.min(devicePixelRatio, 2);
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  renderer = new THREE.WebGLRenderer({canvas:cv, alpha:true, antialias:true, premultipliedAlpha:false});
+  renderer.setSize(W, H, false);
+  renderer.setPixelRatio(dpr);
+  renderer.setClearColor(0x000000, 0);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.6;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(72, W/H, 0.05, 50);
+  camera.position.set(0, 0.9, 0);
+  camera.lookAt(0, 0.5, -2.5);
+  // Luces
+  scene.add(new THREE.AmbientLight(0xffffff, 2.5));
+  const sun = new THREE.DirectionalLight(0xffffff, 3.0);
+  sun.position.set(3, 7, 4); sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  scene.add(sun);
+  scene.add(Object.assign(new THREE.DirectionalLight(0xc8d8ff, 1.5), {position: new THREE.Vector3(-4,4,-2)}));
+  scene.add(Object.assign(new THREE.DirectionalLight(0xffeedd, 1.2), {position: new THREE.Vector3(0,3,5)}));
+  // Piso sombra
+  const flr = new THREE.Mesh(new THREE.PlaneGeometry(40,40), new THREE.ShadowMaterial({opacity:.25}));
+  flr.rotation.x = -Math.PI/2; flr.receiveShadow = true; scene.add(flr);
+  // Cargar modelo
+  // Cargar GLTFLoader dinámicamente
+  let GLTFLoader;
+  try {
+    const mod = await import('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js');
+    GLTFLoader = mod.GLTFLoader;
+  } catch(e) {
+    toast('⚠️ GLTFLoader error: ' + e.message);
+    document.getElementById('mldr').classList.add('off');
+    return;
+  }
+  toast('✅ GLTFLoader OK — cargando GLB…');
+  const loader = new GLTFLoader();
+  loader.load(
+    prod.glb,
+    (gltf) => {
+      const obj = gltf.scene;
+      obj.traverse(c => {
+        if (c.isMesh) {
+          c.castShadow = true; c.receiveShadow = true;
+          const mats = Array.isArray(c.material) ? c.material : [c.material];
+          mats.forEach(m => { if(m.map) m.map.encoding = THREE.sRGBEncoding; m.needsUpdate = true; });
+        }
+      });
+      const box = new THREE.Box3().setFromObject(obj);
+      const size = new THREE.Vector3(); box.getSize(size);
+      baseScale = Math.max(...prod.sz) / Math.max(size.x, size.y, size.z);
+      obj.scale.setScalar(baseScale);
+      const box2 = new THREE.Box3().setFromObject(obj);
+      const fo = prod.floorOffset || 0;
+      baseOffsetY = -box2.min.y + fo;
+      obj.position.set(0, baseOffsetY, -2.5);
+      model = obj; scene.add(model);
+      document.getElementById('mldr').classList.add('off');
+      toast('✅ Listo — 1 dedo: girar · 2 dedos: mover');
+    },
+    (xhr) => {
+      if(xhr.total) {
+        const pct = Math.round(xhr.loaded/xhr.total*100);
+        const tx = document.getElementById('ml-tx');
+        const bar = document.getElementById('ml-bar');
+        if(tx) tx.textContent = `Cargando… ${pct}%`;
+        if(bar) bar.style.width = pct + '%';
+      }
+    },
+    (err) => { console.error(err); toast('⚠️ Error al cargar modelo'); document.getElementById('mldr').classList.add('off'); }
+  );
+  loop();
+  setupTouch();
+}
+
+function loop() {
+  animId = requestAnimationFrame(loop);
+  if (!renderer || !scene || !camera) return;
+  if (model) {
+    model.position.y = placed ? baseOffsetY : baseOffsetY + Math.sin(Date.now()*.0018)*.035;
+    model.rotation.set(0, rotY, 0);
+    model.scale.setScalar(baseScale * scaleV);
+  }
+  renderer.render(scene, camera);
+}
+
+// ── TOUCH EN CANVAS ──
+function setupTouch() {
+  const cv = document.getElementById('cv');
+  cv.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      drag = true;
+      lastT = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+    }
+    if (e.touches.length === 2) {
+      pinchDist = getPinch(e.touches);
+      lastT = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+      };
+    }
+  }, {passive: false});
+
+  cv.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (e.touches.length === 1 && drag && lastT && model) {
+      const dx = e.touches[0].clientX - lastT.x;
+      lastT = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+      rotY += dx * .012;
+    }
+    if (e.touches.length === 2 && model) {
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      if (lastT) {
+        model.position.x += (cx - lastT.x) * .006;
+        model.position.z += (cy - lastT.y) * .006;
+      }
+      lastT = {x: cx, y: cy};
+      if (pinchDist) {
+        const d = getPinch(e.touches);
+        scaleV = Math.max(.15, Math.min(2.5, scaleV * d / pinchDist));
+        pinchDist = d;
+        const pct = Math.round(scaleV * 100);
+        document.getElementById('sl').value = Math.min(200, pct);
+        document.getElementById('slv').textContent = pct + '%';
+      }
+    }
+  }, {passive: false});
+
+  cv.addEventListener('touchend', () => { drag = false; pinchDist = null; }, {passive: true});
+}
+
+function getPinch(ts) {
+  const dx = ts[0].clientX - ts[1].clientX;
+  const dy = ts[0].clientY - ts[1].clientY;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+function onScale(v) { scaleV = parseInt(v) / 100; document.getElementById('slv').textContent = v + '%'; }
+function rot(d) { rotY += d * Math.PI / 8; }
+
+function placeToggle() {
+  if (!placed) {
+    placed = true;
+    document.getElementById('ret').classList.add('off');
+    document.getElementById('hint').classList.add('off');
+    document.getElementById('pbtn').textContent = '↺ Resetear posición';
+    setTimeout(() => openPanel('par'), 600);
+    toast('📐 ¡Colocado!');
+  } else {
+    placed = false;
+    if (model) model.position.set(0, baseOffsetY, -2.5);
+    document.getElementById('ret').classList.remove('off');
+    document.getElementById('hint').classList.remove('off');
+    document.getElementById('pbtn').textContent = '📍 Colocar aquí';
+    closePanel('par');
+  }
+}
+
+window.addEventListener('resize', () => {
+  if (!renderer || !camera) return;
+  const W = window.innerWidth, H = window.innerHeight;
+  const dpr = Math.min(devicePixelRatio, 2);
+  const cv = document.getElementById('cv');
+  cv.width = W*dpr; cv.height = H*dpr;
+  cv.style.width = W+'px'; cv.style.height = H+'px';
+  camera.aspect = W/H; camera.updateProjectionMatrix();
+  renderer.setSize(W, H, false);
+});
+
+function openPanel(id) { document.getElementById(id).classList.add('on'); }
+function closePanel(id) { document.getElementById(id).classList.remove('on'); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2800);
+}
+</script>
+</body>
+</html>
