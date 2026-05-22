@@ -1468,7 +1468,27 @@ window.showDesc = function(id) {
 window.closeDesc = function() {
   document.getElementById('desc-panel').style.display = 'none';
 };
-
+window.showImag = function(id) {
+  if (!P[id]) {
+    toast('Imágenes no disponibles.');
+    return;
+  }
+  const p = P[id];
+  const imagPanel = document.getElementById('imag-panel');
+  const imagText = document.getElementById('imag-text');
+  
+  if (!p.imag) {
+    if (imagText) imagText.innerHTML = '<p>No hay imágenes disponibles para este producto.</p>';
+    if (imagPanel) imagPanel.style.display = 'flex';
+    return;
+  }
+  
+  const imagPath = p.imag.trim();
+  const imagHTML = `<img src="${imagPath}" alt="${p.name}" style="max-width:100%;height:auto;border-radius:8px;object-fit:cover"/>`;
+  
+  if (imagText) imagText.innerHTML = imagHTML;
+  if (imagPanel) imagPanel.style.display = 'flex';
+};
 window.rot=d=>{rotY+=d*Math.PI/8;};
 window.placeToggle=function(){
   if(!placed){
