@@ -1491,13 +1491,95 @@ window.showImg2 = function(id) {
   const panel = document.getElementById('img2-panel');
   if(!title||!text||!panel){ toast('⚠️ Panel no encontrado'); return; }
   title.textContent = p.name;
-  const imgValue = p.img2;
-  // Si es una URL de imagen, mostrar <img>
-  if (imgValue && (imgValue.match(/\.(jpg|jpeg|png|gif|webp)$/i) || imgValue.startsWith('data:image'))) {
-    text.innerHTML = `<img src="${imgValue}" style="max-width:100%; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" alt="${p.name}">`;
-  } else {
-    text.innerHTML = imgValue || 'Próximamente.';
+
+  let images = p.img2;
+  // Si es un string, lo convertimos a array de un solo elemento
+  if (typeof images === 'string') images = [images];
+  // Si no existe o es vacío, mostramos mensaje
+  if (!images || !images.length) {
+    text.innerHTML = 'Próximamente.';
+    panel.style.display = 'flex';
+    toast('📋 ' + p.name);
+    return;
   }
+
+  // Construir el HTML del carrusel
+  let currentIndex = 0;
+  const total = images.length;
+  
+  // Contenedor de imagen con controles
+  const container = document.createElement('div');
+  container.style.position = 'relative';
+  container.style.width = '100%';
+  container.style.textAlign = 'center';
+  
+  const imgElement = document.createElement('img');
+  imgElement.src = images[0];
+  imgElement.style.maxWidth = '100%';
+  imgElement.style.borderRadius = '12px';
+  imgElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+  imgElement.style.maxHeight = '50vh';
+  imgElement.style.objectFit = 'contain';
+  imgElement.alt = p.name;
+  
+  const prevBtn = document.createElement('button');
+  prevBtn.textContent = '◀';
+  prevBtn.style.position = 'absolute';
+  prevBtn.style.left = '10px';
+  prevBtn.style.top = '50%';
+  prevBtn.style.transform = 'translateY(-50%)';
+  prevBtn.style.background = 'rgba(0,0,0,0.6)';
+  prevBtn.style.color = 'white';
+  prevBtn.style.border = 'none';
+  prevBtn.style.borderRadius = '50%';
+  prevBtn.style.width = '36px';
+  prevBtn.style.height = '36px';
+  prevBtn.style.cursor = 'pointer';
+  prevBtn.style.fontSize = '20px';
+  prevBtn.style.zIndex = '10';
+  
+  const nextBtn = document.createElement('button');
+  nextBtn.textContent = '▶';
+  nextBtn.style.position = 'absolute';
+  nextBtn.style.right = '10px';
+  nextBtn.style.top = '50%';
+  nextBtn.style.transform = 'translateY(-50%)';
+  nextBtn.style.background = 'rgba(0,0,0,0.6)';
+  nextBtn.style.color = 'white';
+  nextBtn.style.border = 'none';
+  nextBtn.style.borderRadius = '50%';
+  nextBtn.style.width = '36px';
+  nextBtn.style.height = '36px';
+  nextBtn.style.cursor = 'pointer';
+  nextBtn.style.fontSize = '20px';
+  nextBtn.style.zIndex = '10';
+  
+  const counter = document.createElement('div');
+  counter.style.marginTop = '12px';
+  counter.style.fontSize = '14px';
+  counter.style.color = '#666';
+  counter.textContent = `${currentIndex+1} / ${total}`;
+  
+  container.appendChild(imgElement);
+  if (total > 1) {
+    container.appendChild(prevBtn);
+    container.appendChild(nextBtn);
+  }
+  container.appendChild(counter);
+  
+  const updateImage = (delta) => {
+    currentIndex = (currentIndex + delta + total) % total;
+    imgElement.src = images[currentIndex];
+    counter.textContent = `${currentIndex+1} / ${total}`;
+  };
+  
+  prevBtn.onclick = (e) => { e.stopPropagation(); updateImage(-1); };
+  nextBtn.onclick = (e) => { e.stopPropagation(); updateImage(1); };
+  
+  // Limpiar contenido anterior y agregar el carrusel
+  text.innerHTML = '';
+  text.appendChild(container);
+  
   panel.style.display = 'flex';
   toast('📋 ' + p.name);
 };
