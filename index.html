@@ -184,7 +184,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="pbtns">
       <button class="pb pb-lt" onclick="closePanel('p3d')">Seguir viendo</button>
       <button class="pb pb-dk" id="desc-btn" onclick="showDesc(window._curId||'bici')">📋 Descripción</button>
-      <button class="pb pb-dk" id="imag-btn" onclick="showImag(window._curId||'bici')">📋 Imágenes</button>
+      <button class="pb pb-dk" id="img2-btn" onclick="showImg2(window._curId||'bici')">📋 Imágenes</button>
     </div>
   </div>
 </div>
@@ -243,7 +243,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="pbtns">
       <button class="pb pb-lt" onclick="closePanel('par')">Seguir viendo</button>
       <button class="pb pb-dk" id="desc-btn" onclick="showDesc(window._curId||'bici')">📋 Descripción</button>
-      <button class="pb pb-dk" id="imag-btn" onclick="showImag(window._curId||'bici')">📋 Imágenes</button>
+      <button class="pb pb-dk" id="img2-btn" onclick="showImg2(window._curId||'bici')">📋 Imágenes</button>
     </div>
   </div>
 </div>
@@ -260,7 +260,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div style="font-size:.85rem;color:#333;line-height:1.7;max-height:55vh;overflow-y:auto;padding-right:4px;word-break:break-word" id="desc-text">Cargando…</div>
   </div>
   <!-- Panel imagenes -->
-<div id="imag-panel" style="position:fixed;inset:0;z-index:100;display:none;align-items:flex-end;justify-content:center">
+<div id="img2-panel" style="position:fixed;inset:0;z-index:100;display:none;align-items:flex-end;justify-content:center">
   <div style="position:absolute;inset:0;background:rgba(0,0,0,.5)" onclick="closeDesc()"></div>
   <div style="position:relative;background:#fff;border-radius:22px 22px 0 0;padding:1.5rem 1.5rem 2.5rem;width:100%;max-width:500px;z-index:101">
     <button onclick="closeDesc()" style="position:absolute;top:.9rem;right:.9rem;width:28px;height:28px;border-radius:50%;background:#f0ebe3;border:none;cursor:pointer;font-size:.85rem">✕</button>
@@ -319,7 +319,7 @@ const P = {
     dims:'110×170×91 cm',
     sz:[1.43, 2.21, 1.18],
     desc:'<b>Movilidad en Arena y Agua</b><br><br> Dispositivo de apoyo que permite a personas con movilidad reducida desplazarse por terrenos irregulares como la arena y flotar en el agua de forma segura.<br><br> <b>✔ Usos:</b> Playa, piscinas y parques acuáticos.<br><br> <b>✔ Beneficios:</b><br> — <b>Inclusión:</b> Permite participar en actividades recreativas junto a familia y amigos sin limitaciones.<br> — <b>Autonomía:</b> Brinda la posibilidad de disfrutar del agua de manera confortable, mejorando la calidad de vida.',
-    imag:'models/imagenes/ANFIBIA_02.jpg',
+    img2:'models/imagenes/ANFIBIA_02.jpg',
     glb:'models/SILLA_ANFIBIA.glb',
     floorOffset:-0.5,
   },
@@ -1468,26 +1468,26 @@ window.showDesc = function(id) {
 window.closeDesc = function() {
   document.getElementById('desc-panel').style.display = 'none';
 };
-window.showImag = function(id) {
+window.showImg2 = function(id) {
   if (!P[id]) {
     toast('Imágenes no disponibles.');
     return;
   }
   const p = P[id];
-  const imagPanel = document.getElementById('imag-panel');
-  const imagText = document.getElementById('imag-text');
+  const img2Panel = document.getElementById('img2-panel');
+  const img2Text = document.getElementById('img2-text');
   
-  if (!p.imag) {
-    if (imagText) imagText.innerHTML = '<p>No hay imágenes disponibles para este producto.</p>';
-    if (imagPanel) imagPanel.style.display = 'flex';
+  if (!p.img2) {
+    if (img2Text) img2Text.innerHTML = '<p>No hay imágenes disponibles para este producto.</p>';
+    if (img2Panel) img2Panel.style.display = 'flex';
     return;
   }
   
-  const imagPath = p.imag.trim();
-  const imagHTML = `<img src="${imagPath}" alt="${p.name}" style="max-width:100%;height:auto;border-radius:8px;object-fit:cover"/>`;
+  const img2Path = p.img2.trim();
+  const img2HTML = `<img src="${img2Path}" alt="${p.name}" style="max-width:100%;height:auto;border-radius:8px;object-fit:cover"/>`;
   
-  if (imagText) imagText.innerHTML = imagHTML;
-  if (imagPanel) imagPanel.style.display = 'flex';
+  if (img2Text) img2Text.innerHTML = img2HTML;
+  if (img2Panel) img2Panel.style.display = 'flex';
 };
 window.rot=d=>{rotY+=d*Math.PI/8;};
 window.placeToggle=function(){
