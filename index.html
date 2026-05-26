@@ -1480,12 +1480,15 @@ window.showImg2 = function(id) {
   const panel = document.getElementById('img2-panel');
   if(!title||!text||!panel){ toast('⚠️ Panel no encontrado'); return; }
   title.textContent = p.name;
-  text.innerHTML = p.img2 || 'Próximamente.';
+  const imgValue = p.img2;
+  // Si es una URL de imagen, mostrar <img>
+  if (imgValue && (imgValue.match(/\.(jpg|jpeg|png|gif|webp)$/i) || imgValue.startsWith('data:image'))) {
+    text.innerHTML = `<img src="${imgValue}" style="max-width:100%; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" alt="${p.name}">`;
+  } else {
+    text.innerHTML = imgValue || 'Próximamente.';
+  }
   panel.style.display = 'flex';
   toast('📋 ' + p.name);
-};
-window.closeImg2 = function() {
-  document.getElementById('img2-panel').style.display = 'none';
 };
 
 window.rot=d=>{rotY+=d*Math.PI/8;};
